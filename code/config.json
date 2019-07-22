@@ -1,0 +1,8 @@
+{
+	"srcdir": "..//test//",
+	"lable": {
+		"bridge": 29,
+		"viudact": 34	
+	},
+	"savefile":"../submissions.csv"
+}
