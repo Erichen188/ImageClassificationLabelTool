@@ -1,0 +1,78 @@
+import json
+import os
+import numpy as np
+import pandas as pd
+import cv2
+
+#读取配置文件
+with open("config.json","rb") as f:
+    config = json.load(f)
+
+srcdir = config["srcdir"]
+lable = config["lable"]
+savefile = config["savefile"]
+
+#读取类别信息
+classes = []
+id = []
+for i in lable.keys():
+    classes.append(i)
+    id.append(lable[i])
+
+#读取需处理图片路径
+filepath = []
+for root,ds,fs in os.walk(srcdir):
+    for f in fs:
+        if f[-3:] == "jpg":
+            filepath.append(f)
+
+#初始化submission路径
+startindex = 0
+submissionlsit = []
+startflag = False
+if not os.path.exists(savefile):
+    a = []
+    for i in filepath:
+        dict = {}
+        dict["file"] = i
+        dict["id"] = "unLable"
+        a.append(dict)
+    df = pd.DataFrame(a, columns=["file", "id"])
+    df.to_csv(savefile, index=False)
+    submissionlsit = a
+else:
+    df = pd.read_csv(savefile)
+    for index,i in enumerate(df["id"]):
+        dict = {}
+        dict["file"] = df["file"][index]
+        dict["id"] = i
+        submissionlsit.append(dict)
+        if i == "unLable" and not startflag:
+            startindex = index
+            startflag = True
+
+
+unlabelfilepath = filepath[startindex:]
+
+#开始处理
+for index,i in enumerate(unlabelfilepath):
+    path = os.path.join(srcdir,i)
+    image = cv2.imread(path)
+    cv2.imshow("window",image)
+    back = cv2.waitKey() - 49 #1是49
+    if back ==-22: #退出并保存
+        break
+    try:
+        submissionlsit[index+startindex]["id"] = lable[list(lable.keys())[back]]
+        dict = {}
+        dict["file"] = unlabelfilepath[index+startindex]
+        dict["id"] = lable[list(lable.keys())[back]]
+        print(dict)
+    except:
+        print("error")
+        continue
+
+#文件保存
+df = pd.DataFrame(submissionlsit, columns=["file", "id"])
+df.to_csv(savefile, index=False)
+print("Finish saving")
